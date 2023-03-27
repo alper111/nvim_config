@@ -1,4 +1,4 @@
-require("core.keymaps")
-require("core.plugins")
-require("core.plugin_config")
+require("keymaps")
+require("plugins")
+require("plugin_config")
 
