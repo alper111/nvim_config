@@ -1,4 +1,4 @@
-require("keymaps")
+require("general")
 require("plugins")
 require("plugin_config")
 
