@@ -22,9 +22,9 @@ return require('packer').startup(function(use)
     requires = { {'nvim-lua/plenary.nvim'} }
   }
   use {
-      'morhetz/gruvbox',
+      'dracula/vim',
       config=function()
-        vim.cmd('colorscheme gruvbox')
+        vim.cmd('colorscheme dracula')
       end
   }
 
