@@ -28,6 +28,48 @@ vim.opt.splitright = true
 vim.keymap.set('n', '<c-b>', ':NvimTreeFindFileToggle<CR>')
 
 
+-- Packer bootstrap
+local ensure_packer = function()
+  local fn = vim.fn
+  local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+  if fn.empty(fn.glob(install_path)) > 0 then
+    fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path})
+    vim.cmd [[packadd packer.nvim]]
+    return true
+  end
+  return false
+end
+
+local packer_bootstrap = ensure_packer()
+
+-- Packer config
+require('packer').startup(function(use)
+  use 'wbthomason/packer.nvim'
+  use 'github/copilot.vim'
+  use 'neovim/nvim-lspconfig'
+  use 'nvim-tree/nvim-tree.lua'
+  use {
+      'nvim-lualine/lualine.nvim'
+  }
+  use {
+    'nvim-telescope/telescope.nvim',
+    tag = '0.1.0',
+    requires = { {'nvim-lua/plenary.nvim'} }
+  }
+  use {
+      'dracula/vim',
+      config=function()
+        vim.cmd('colorscheme dracula')
+      end
+  }
+
+  -- Automatically set up your configuration after cloning packer.nvim
+  -- Put this at the end after all plugins
+  if packer_bootstrap then
+    require('packer').sync()
+  end
+end)
+
 -- Plugin Config
 require('lualine').setup {
     options = {
@@ -130,48 +172,4 @@ vim.keymap.set('n', '<Space><Space>', builtin.oldfiles, {})
 vim.keymap.set('n', '<Space>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<Space>fh', builtin.help_tags, {})
 vim.keymap.set('n', '<Space>fb', builtin.buffers, {})
-
-
--- Packer bootstrap
-local ensure_packer = function()
-  local fn = vim.fn
-  local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
-  if fn.empty(fn.glob(install_path)) > 0 then
-    fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path})
-    vim.cmd [[packadd packer.nvim]]
-    return true
-  end
-  return false
-end
-
-local packer_bootstrap = ensure_packer()
-
--- Packer config
-return require('packer').startup(function(use)
-  use 'wbthomason/packer.nvim'
-  use 'github/copilot.vim'
-  use 'neovim/nvim-lspconfig'
-  use 'nvim-tree/nvim-tree.lua'
-  use {
-      'nvim-lualine/lualine.nvim'
-  }
-  use {
-    'nvim-telescope/telescope.nvim',
-    tag = '0.1.0',
-    requires = { {'nvim-lua/plenary.nvim'} }
-  }
-  use {
-      'dracula/vim',
-      config=function()
-        vim.cmd('colorscheme dracula')
-      end
-  }
-
-  -- Automatically set up your configuration after cloning packer.nvim
-  -- Put this at the end after all plugins
-  if packer_bootstrap then
-    require('packer').sync()
-  end
-end)
-
 
