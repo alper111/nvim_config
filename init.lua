@@ -48,6 +48,7 @@ require('packer').startup(function(use)
   use 'github/copilot.vim'
   use 'neovim/nvim-lspconfig'
   use 'nvim-tree/nvim-tree.lua'
+  use 'PontusPersson/pddl.vim'
   use {
       'nvim-lualine/lualine.nvim'
   }
