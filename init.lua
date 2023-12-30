@@ -49,12 +49,9 @@ require('packer').startup(function(use)
   use 'neovim/nvim-lspconfig'
   use 'nvim-tree/nvim-tree.lua'
   use 'PontusPersson/pddl.vim'
-  use {
-      'nvim-lualine/lualine.nvim'
-  }
+  use 'nvim-lualine/lualine.nvim'
   use {
     'nvim-telescope/telescope.nvim',
-    tag = '0.1.0',
     requires = { {'nvim-lua/plenary.nvim'} }
   }
   use {
