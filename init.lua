@@ -23,10 +23,14 @@ vim.opt.autoindent = true
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.splitright = true
+vim.opt.splitbelow = true
 
 -- Keybindings
 vim.keymap.set('n', '<c-b>', ':NvimTreeFindFileToggle<CR>')
-
+-- Open the terminal in a new window below with 10 lines with insert mode
+vim.keymap.set('n', 'gt', ':botright 10sp | terminal<CR>i')
+-- Focus the below window
+vim.keymap.set('n', '<c-j>', '<c-w>j')
 
 -- Packer bootstrap
 local ensure_packer = function()
@@ -50,6 +54,7 @@ require('packer').startup(function(use)
   use 'nvim-tree/nvim-tree.lua'
   use 'PontusPersson/pddl.vim'
   use 'nvim-lualine/lualine.nvim'
+  use 'tpope/vim-commentary'
   use {
     'nvim-telescope/telescope.nvim',
     requires = { {'nvim-lua/plenary.nvim'} }
