@@ -60,9 +60,9 @@ require('packer').startup(function(use)
     requires = { {'nvim-lua/plenary.nvim'} }
   }
   use {
-      'dracula/vim',
+      'tomasiser/vim-code-dark',
       config=function()
-        vim.cmd('colorscheme dracula')
+        vim.cmd('colorscheme codedark')
       end
   }
 
