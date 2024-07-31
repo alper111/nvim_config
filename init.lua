@@ -60,10 +60,9 @@ require('packer').startup(function(use)
     requires = { {'nvim-lua/plenary.nvim'} }
   }
   use {
-      'catppuccin/nvim',
-      as = 'catppuccin',
+      'projekt0n/github-nvim-theme',
       config=function()
-        vim.cmd('colorscheme catppuccin-latte')
+        vim.cmd('colorscheme github_light_default')
       end
   }
 
