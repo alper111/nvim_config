@@ -60,9 +60,10 @@ require('packer').startup(function(use)
     requires = { {'nvim-lua/plenary.nvim'} }
   }
   use {
-      'tomasiser/vim-code-dark',
+      'catppuccin/nvim',
+      as = 'catppuccin',
       config=function()
-        vim.cmd('colorscheme codedark')
+        vim.cmd('colorscheme catppuccin-latte')
       end
   }
 
