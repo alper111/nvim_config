@@ -24,13 +24,16 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.splitright = true
 vim.opt.splitbelow = true
+-- highlight current line
+vim.opt.cursorline = true
 
 -- Keybindings
 vim.keymap.set('n', '<c-b>', ':NvimTreeFindFileToggle<CR>')
 -- Open the terminal in a new window below with 10 lines with insert mode
 vim.keymap.set('n', 'gt', ':botright 10sp | terminal<CR>i')
 -- Focus the below window
-vim.keymap.set('n', '<c-j>', '<c-w>j')
+vim.keymap.set('n', '<c-j>', '<c-w>ji')
+vim.keymap.set('n', '<leader>bd', ':bd<CR>', { noremap = true })
 
 -- Packer bootstrap
 local ensure_packer = function()
@@ -49,7 +52,13 @@ local packer_bootstrap = ensure_packer()
 -- Packer config
 require('packer').startup(function(use)
     use 'wbthomason/packer.nvim'
-    use 'github/copilot.vim'
+    use {
+        'github/copilot.vim',
+        config = function()
+            -- disable copilot by default
+            vim.g.copilot_enabled = false
+        end
+    }
     use {
         'saghen/blink.cmp',
         requires = { 'rafamadriz/friendly-snippets' }, -- optional dependency
@@ -126,6 +135,20 @@ require('packer').startup(function(use)
                   vim.lsp.buf.format { async = true }
                 end, opts)
               end,
+            })
+        end
+    }
+
+    use {
+        'mfussenegger/nvim-lint',
+        config = function()
+            require("lint").linters_by_ft = {
+                python = { "flake8" }
+            }
+            vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+                callback = function()
+                    require("lint").try_lint()
+                end
             })
         end
     }
@@ -212,8 +235,14 @@ require('packer').startup(function(use)
 
     use {
         'projekt0n/github-nvim-theme',
+        -- config = function()
+        --     vim.cmd('colorscheme github_light_default')
+        -- end
+    }
+    use {
+        "catppuccin/nvim",
         config = function()
-            vim.cmd('colorscheme github_light_default')
+            vim.cmd("colorscheme catppuccin-latte")
         end
     }
 
