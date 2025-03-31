@@ -235,14 +235,8 @@ require('packer').startup(function(use)
 
     use {
         'projekt0n/github-nvim-theme',
-        -- config = function()
-        --     vim.cmd('colorscheme github_light_default')
-        -- end
-    }
-    use {
-        "catppuccin/nvim",
         config = function()
-            vim.cmd("colorscheme catppuccin-latte")
+            vim.cmd('colorscheme github_light_default')
         end
     }
 
