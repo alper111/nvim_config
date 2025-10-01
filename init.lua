@@ -52,13 +52,6 @@ local packer_bootstrap = ensure_packer()
 -- Packer config
 require('packer').startup(function(use)
     use 'wbthomason/packer.nvim'
-    use {
-        'github/copilot.vim',
-        config = function()
-            -- disable copilot by default
-            vim.g.copilot_enabled = false
-        end
-    }
 
     use {
         'hrsh7th/nvim-cmp',
