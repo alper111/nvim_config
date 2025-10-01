@@ -59,43 +59,37 @@ require('packer').startup(function(use)
             vim.g.copilot_enabled = false
         end
     }
+
     use {
-        'saghen/blink.cmp',
-        requires = { 'rafamadriz/friendly-snippets' }, -- optional dependency
-        tag = '*', -- use a release tag for pre-built binaries
-        -- OR build from source if needed
-        -- run = 'cargo build --release',
-        -- run = 'nix run .#build-plugin', -- for nix users
+        'hrsh7th/nvim-cmp',
         config = function()
-        require('blink.cmp').setup({
-            keymap = { preset = 'super-tab' },
-            appearance = {
-                use_nvim_cmp_as_default = true,
-                nerd_font_variant = 'mono'
-            },
-            sources = {
-                default = { 'lsp', 'path', 'snippets', 'buffer' }
-            },
-            fuzzy = { implementation = "prefer_rust_with_warning" }
+            local cmp = require'cmp'
+            cmp.setup({
+                mapping = {
+                    ['<Tab>'] = cmp.mapping.confirm({ select = true }),
+                },
+                sources = {
+                    { name = 'nvim_lsp' },
+                    { name = 'buffer' },
+                }
             })
         end
     }
+    use 'hrsh7th/cmp-nvim-lsp'
 
     use {
         'neovim/nvim-lspconfig',
-        requires = { 'saghen/blink.cmp' }, -- Dependency on blink.cmp
         config = function()
-            local capabilities = require('blink.cmp').get_lsp_capabilities()
+            local capabilities = vim.lsp.protocol.make_client_capabilities()
+            capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
             local lspconfig = require('lspconfig')
 
-            -- Define LSP servers and their configurations
             local servers = {
                 pyright = lspconfig.pyright
             }
-
+            
             for server, config in pairs(servers) do
-                -- Merge blink.cmp capabilities with existing capabilities if defined
-                config.capabilities = require('blink.cmp').get_lsp_capabilities(config.capabilities)
+                config.capabilities = capabilities
                 lspconfig[server].setup(config)
             end
 
@@ -119,7 +113,7 @@ require('packer').startup(function(use)
                 local opts = { buffer = ev.buf }
                 vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
                 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-                vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+                vim.keymap.set('n', 'K', vim.lsp.handlers.hover, opts)
                 vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
                 vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
                 vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
@@ -202,17 +196,8 @@ require('packer').startup(function(use)
                 disabled_filetypes = {},
             },
             sections = {
-                lualine_a = {
-                    {
-                        'filename',
-                        path = 1
-                    },
-                },
-                lualine_c = {
-                        {
-                            'mode'
-                        }
-                    }
+                lualine_a = {{ 'filename', path = 1 }},
+                lualine_c = {{ 'mode' }}
                 }
             }
 	end
