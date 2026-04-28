@@ -3,16 +3,6 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-vim.g.nvim_tree_show_icons = {
-    git = 1,
-    folders = 1,
-    files = 0,
-    folder_arrows = 1,
-}
-
-vim.g.nvim_tree_icons = {
-    default = ''
-}
 
 vim.opt.softtabstop = 0
 vim.opt.shiftwidth = 4
@@ -29,34 +19,54 @@ vim.opt.cursorline = true
 
 -- Keybindings
 vim.keymap.set('n', '<c-b>', ':NvimTreeFindFileToggle<CR>')
--- Open the terminal in a new window below with 10 lines with insert mode
-vim.keymap.set('n', 'gt', ':botright 10sp | terminal<CR>i')
--- Focus the below window
-vim.keymap.set('n', '<c-j>', '<c-w>ji')
 vim.keymap.set('n', '<leader>bd', ':bd<CR>', { noremap = true })
 
--- Packer bootstrap
-local ensure_packer = function()
-    local fn = vim.fn
-    local install_path = fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
-    if fn.empty(fn.glob(install_path)) > 0 then
-        fn.system({'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path})
-        vim.cmd [[packadd packer.nvim]]
-        return true
+-- VSCode-like terminal toggle: opens a 10-line split below on first press,
+-- hides it on the next, and re-shows the same buffer (not a new one) after that.
+local term = { buf = nil }
+local function toggle_terminal()
+    if term.buf and vim.api.nvim_buf_is_valid(term.buf) then
+        local win = vim.fn.bufwinid(term.buf)
+        if win ~= -1 then
+            vim.api.nvim_win_close(win, false)
+            return
+        end
+        vim.cmd('botright 10sp')
+        vim.api.nvim_win_set_buf(0, term.buf)
+        vim.cmd('startinsert')
+        return
     end
-    return false
+    vim.cmd('botright 10sp | terminal')
+    term.buf = vim.api.nvim_get_current_buf()
+    vim.cmd('startinsert')
 end
+vim.keymap.set({ 'n', 't' }, '<c-j>', toggle_terminal)
 
-local packer_bootstrap = ensure_packer()
+vim.api.nvim_create_autocmd('BufEnter', {
+    callback = function()
+        if vim.bo.buftype == 'terminal' then
+            vim.cmd('startinsert')
+        end
+    end,
+})
 
--- Packer config
-require('packer').startup(function(use)
-    use 'wbthomason/packer.nvim'
+-- lazy.nvim bootstrap
+local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+    vim.fn.system({
+        'git', 'clone', '--filter=blob:none',
+        'https://github.com/folke/lazy.nvim.git',
+        '--branch=stable', lazypath,
+    })
+end
+vim.opt.rtp:prepend(lazypath)
 
-    use {
+require('lazy').setup({
+    {
         'hrsh7th/nvim-cmp',
+        dependencies = { 'hrsh7th/cmp-nvim-lsp' },
         config = function()
-            local cmp = require'cmp'
+            local cmp = require('cmp')
             cmp.setup({
                 mapping = {
                     ['<Tab>'] = cmp.mapping.confirm({ select = true }),
@@ -67,76 +77,83 @@ require('packer').startup(function(use)
                 }
             })
         end
-    }
-    use 'hrsh7th/cmp-nvim-lsp'
+    },
 
-    use {
+    {
         'neovim/nvim-lspconfig',
         config = function()
             local capabilities = vim.lsp.protocol.make_client_capabilities()
-            cap = require('cmp_nvim_lsp').default_capabilities(capabilities)
+            local cap = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
-	    vim.lsp.config('pyright', { capabilities = cap })
-	    vim.lsp.enable('pyright')
+            vim.lsp.config('pylsp', { capabilities = cap })
+            vim.lsp.enable('pylsp')
 
             -- Global mappings.
             -- See `:help vim.diagnostic.*` for documentation on any of the below functions
             vim.keymap.set('n', '<space>e', vim.diagnostic.open_float)
-            vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-            vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
+            vim.keymap.set('n', '[d', function() vim.diagnostic.jump({ count = -1, float = true }) end)
+            vim.keymap.set('n', ']d', function() vim.diagnostic.jump({ count = 1, float = true }) end)
             vim.keymap.set('n', '<space>q', vim.diagnostic.setloclist)
 
             -- Use LspAttach autocommand to only map the following keys
             -- after the language server attaches to the current buffer
             vim.api.nvim_create_autocmd('LspAttach', {
-              group = vim.api.nvim_create_augroup('UserLspConfig', {}),
-              callback = function(ev)
-                -- Enable completion triggered by <c-x><c-o>
-                vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+                group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+                callback = function(ev)
+                    -- Enable completion triggered by <c-x><c-o>
+                    vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
 
-                -- Buffer local mappings.
-                -- See `:help vim.lsp.*` for documentation on any of the below functions
-                local opts = { buffer = ev.buf }
-                vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
-                vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-                vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-                vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-                vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-                vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
-                vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
-                vim.keymap.set('n', '<space>wl', function()
-                  print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-                end, opts)
-                vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
-                vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
-                vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
-                vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-                vim.keymap.set('n', '<space>f', function()
-                  vim.lsp.buf.format { async = true }
-                end, opts)
-              end,
+                    -- Buffer local mappings.
+                    -- See `:help vim.lsp.*` for documentation on any of the below functions
+                    local opts = { buffer = ev.buf }
+                    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+                    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+                    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+                    vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+                    vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+                    vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
+                    vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
+                    vim.keymap.set('n', '<space>wl', function()
+                        print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+                    end, opts)
+                    vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, opts)
+                    vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
+                    vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
+                    vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+                    vim.keymap.set('n', '<space>f', function()
+                        vim.lsp.buf.format { async = true }
+                    end, opts)
+                end,
             })
         end
-    }
+    },
 
-    use {
+    {
         'mfussenegger/nvim-lint',
         config = function()
-            require("lint").linters_by_ft = {
-                python = { "flake8" }
+            require('lint').linters_by_ft = {
+                python = { 'flake8' }
             }
-            vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+
+            require('lint').linters.flake8.args = {
+                '--max-line-length=120',
+                '--format=%(path)s:%(row)d:%(col)d:%(code)s:%(text)s',
+                '--no-show-source',
+                '-',
+            }
+
+            vim.api.nvim_create_autocmd({ 'BufWritePost' }, {
                 callback = function()
-                    require("lint").try_lint()
+                    require('lint').try_lint()
                 end
             })
         end
-    }
+    },
 
-    use {
+    {
         'nvim-tree/nvim-tree.lua',
         config = function()
-            require("nvim-tree").setup {
+            require('nvim-tree').setup {
                 renderer = {
                     icons = {
                         glyphs = {
@@ -154,45 +171,47 @@ require('packer').startup(function(use)
                                 symlink = "",
                                 symlink_open = "",
                             },
-                        git = {
-                            unstaged = "✗",
-                            staged = "✓",
-                            unmerged = "",
-                            renamed = "➜",
-                            untracked = "★",
-                            deleted = "",
-                            ignored = "◌",
+                            git = {
+                                unstaged = "✗",
+                                staged = "✓",
+                                unmerged = "",
+                                renamed = "➜",
+                                untracked = "★",
+                                deleted = "",
+                                ignored = "◌",
                             },
                         }
                     }
                 }
             }
         end
-    }
+    },
 
-    use 'PontusPersson/pddl.vim'
-    use {
+    'PontusPersson/pddl.vim',
+
+    {
         'nvim-lualine/lualine.nvim',
-	config = function()
+        config = function()
             require('lualine').setup {
-            options = {
-                icons_enabled = false,
-                section_separators = {left='', right=''},
-                component_separators = {left='|', right='|'},
-                disabled_filetypes = {},
-            },
-            sections = {
-                lualine_a = {{ 'filename', path = 1 }},
-                lualine_c = {{ 'mode' }}
+                options = {
+                    icons_enabled = false,
+                    section_separators = { left = '', right = '' },
+                    component_separators = { left = '|', right = '|' },
+                    disabled_filetypes = {},
+                },
+                sections = {
+                    lualine_a = { { 'filename', path = 1 } },
+                    lualine_c = { { 'mode' } }
                 }
             }
-	end
-    }
+        end
+    },
 
-    use 'tpope/vim-commentary'
-    use {
+    'tpope/vim-commentary',
+
+    {
         'nvim-telescope/telescope.nvim',
-        requires = { {'nvim-lua/plenary.nvim'} },
+        dependencies = { 'nvim-lua/plenary.nvim' },
         config = function()
             local builtin = require('telescope.builtin')
             vim.keymap.set('n', '<c-p>', builtin.find_files, {})
@@ -202,19 +221,12 @@ require('packer').startup(function(use)
             vim.keymap.set('n', '<Space>fb', builtin.buffers, {})
             vim.keymap.set('n', '<Space>fc', builtin.commands, {})
         end
-    }
+    },
 
-    use {
+    {
         'projekt0n/github-nvim-theme',
         config = function()
             vim.cmd('colorscheme github_light_default')
         end
-    }
-
-    -- Automatically set up your configuration after cloning packer.nvim
-    -- Put this at the end after all plugins
-    if packer_bootstrap then
-        require('packer').sync()
-    end
-end)
-
+    },
+})
